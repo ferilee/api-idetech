@@ -1,14 +1,7 @@
 .DS_Store
 .env
 .env.local
-.env.*.local
 
 backend/bin/
 backend/.cache/
 backend/coverage.out
-
-frontend/.next/
-frontend/node_modules/
-frontend/out/
-
-deploy/docker/data/

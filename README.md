@@ -1,26 +1,17 @@
-# IdeTech
+# API IdeTech
 
-Initial monorepo scaffold for the IdeTech platform based on `blue_print_idetech.md`.
+Backend repository for the IdeTech platform.
 
-## Structure
+## Scope
 
-```text
-backend/   Go API (Chi, tenant-aware bootstrap)
-frontend/  Next.js app scaffold
-deploy/    Docker and environment assets
-docs/      Product and engineering notes
-```
+- Go + Chi API
+- PostgreSQL migrations
+- backend environment configuration
+- backend-oriented deployment assets
 
-## Current scope
+## Current bootstrap
 
-- tenant-aware API bootstrap foundation;
-- PostgreSQL migration baseline;
-- frontend landing page with tenant bootstrap flow;
-- local Docker Compose for app dependencies.
-
-## Next milestones
-
-1. auth and JWT flow;
-2. tenant and user persistence with PostgreSQL;
-3. material upload to MinIO;
-4. quiz generation pipeline.
+- `GET /healthz`
+- `GET /api/v1/tenant/bootstrap`
+- initial tenant-aware middleware
+- initial PostgreSQL schema derived from the blueprint
