@@ -8,23 +8,54 @@ import (
 	"syscall"
 	"time"
 
+	authdomain "github.com/ferilee/api-idetech/backend/internal/auth/domain"
 	authrepo "github.com/ferilee/api-idetech/backend/internal/auth/repository"
 	authservice "github.com/ferilee/api-idetech/backend/internal/auth/service"
+	"github.com/ferilee/api-idetech/backend/internal/platform/bootstrap"
 	"github.com/ferilee/api-idetech/backend/internal/platform/config"
+	"github.com/ferilee/api-idetech/backend/internal/platform/database"
 	apphttp "github.com/ferilee/api-idetech/backend/internal/platform/http"
+	tenantdomain "github.com/ferilee/api-idetech/backend/internal/tenant/domain"
 	tenantrepo "github.com/ferilee/api-idetech/backend/internal/tenant/repository"
 	tenantservice "github.com/ferilee/api-idetech/backend/internal/tenant/service"
 )
 
+type tenantRepository interface {
+	FindBySlug(ctx context.Context, slug string) (tenantdomain.Tenant, error)
+}
+
+type authRepository interface {
+	FindByTenantAndIdentity(ctx context.Context, tenantSlug, identity string) (authdomain.User, error)
+	FindByID(ctx context.Context, id string) (authdomain.User, error)
+}
+
 func main() {
 	cfg := config.MustLoad()
 
-	tenantRepository := tenantrepo.NewMemoryRepository()
-	tenantRepository.SeedDefaults()
+	memoryTenantRepository := tenantrepo.NewMemoryRepository()
+	memoryTenantRepository.SeedDefaults()
+	var tenantRepository tenantRepository = memoryTenantRepository
 
-	authRepository := authrepo.NewMemoryRepository()
-	if err := authRepository.SeedDefaults(); err != nil {
+	memoryAuthRepository := authrepo.NewMemoryRepository()
+	if err := memoryAuthRepository.SeedDefaults(); err != nil {
 		log.Fatalf("failed to seed auth repository: %v", err)
+	}
+	var authRepository authRepository = memoryAuthRepository
+
+	if dsn := cfg.PostgresDSN(); dsn != "" {
+		db, err := database.OpenPostgres(context.Background(), dsn)
+		if err != nil {
+			log.Fatalf("failed to connect postgres: %v", err)
+		}
+		defer db.Close()
+
+		if err := bootstrap.SeedDemoData(context.Background(), db); err != nil {
+			log.Fatalf("failed to seed postgres demo data: %v", err)
+		}
+
+		tenantRepository = tenantrepo.NewPostgresRepository(db)
+		authRepository = authrepo.NewPostgresRepository(db)
+		log.Printf("postgres repositories enabled")
 	}
 
 	tenantService := tenantservice.NewService(tenantRepository)

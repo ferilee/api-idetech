@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS student_progress (
 
 CREATE INDEX IF NOT EXISTS idx_users_tenant_id ON users (tenant_id);
 CREATE INDEX IF NOT EXISTS idx_users_tenant_role ON users (tenant_id, role);
+CREATE INDEX IF NOT EXISTS idx_users_tenant_email ON users (tenant_id, email);
 CREATE INDEX IF NOT EXISTS idx_materials_tenant_id ON materials (tenant_id);
 CREATE INDEX IF NOT EXISTS idx_quests_tenant_id ON quests (tenant_id);
 CREATE INDEX IF NOT EXISTS idx_quizzes_tenant_id ON quizzes (tenant_id);
