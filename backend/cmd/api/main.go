@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	authrepo "github.com/ferilee/api-idetech/backend/internal/auth/repository"
+	authservice "github.com/ferilee/api-idetech/backend/internal/auth/service"
 	"github.com/ferilee/api-idetech/backend/internal/platform/config"
 	apphttp "github.com/ferilee/api-idetech/backend/internal/platform/http"
 	tenantrepo "github.com/ferilee/api-idetech/backend/internal/tenant/repository"
@@ -20,8 +22,20 @@ func main() {
 	tenantRepository := tenantrepo.NewMemoryRepository()
 	tenantRepository.SeedDefaults()
 
+	authRepository := authrepo.NewMemoryRepository()
+	if err := authRepository.SeedDefaults(); err != nil {
+		log.Fatalf("failed to seed auth repository: %v", err)
+	}
+
 	tenantService := tenantservice.NewService(tenantRepository)
-	handler := apphttp.NewHandler(cfg, tenantService)
+	authService := authservice.NewService(
+		authRepository,
+		tenantRepository,
+		cfg.JWTIssuer,
+		cfg.JWTAudience,
+		cfg.JWTSecret,
+	)
+	handler := apphttp.NewHandler(cfg, authService, tenantService)
 
 	server := &http.Server{
 		Addr:              ":" + cfg.Port,

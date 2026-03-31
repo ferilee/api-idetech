@@ -11,6 +11,9 @@ type Config struct {
 	Port           string
 	BaseURL        string
 	AllowedOrigins []string
+	JWTIssuer      string
+	JWTAudience    string
+	JWTSecret      string
 }
 
 func MustLoad() Config {
@@ -19,6 +22,9 @@ func MustLoad() Config {
 		Port:           getEnv("APP_PORT", "8080"),
 		BaseURL:        getEnv("APP_BASE_URL", "http://localhost:8080"),
 		AllowedOrigins: splitCSV(getEnv("APP_ALLOWED_ORIGINS", "http://localhost:3000")),
+		JWTIssuer:      getEnv("JWT_ISSUER", "idetech-api"),
+		JWTAudience:    getEnv("JWT_AUDIENCE", "idetech-web"),
+		JWTSecret:      getEnv("JWT_SECRET", "change-me"),
 	}
 
 	log.Printf("config loaded env=%s port=%s", cfg.AppEnv, cfg.Port)
