@@ -13,20 +13,23 @@ import (
 	"github.com/ferilee/api-idetech/backend/internal/platform/config"
 	platformmiddleware "github.com/ferilee/api-idetech/backend/internal/platform/http/middleware"
 	"github.com/ferilee/api-idetech/backend/internal/tenant/service"
+	userservice "github.com/ferilee/api-idetech/backend/internal/user/service"
 )
 
 type Handler struct {
 	cfg           config.Config
 	authService   *authservice.Service
 	tenantService *service.Service
+	userService   *userservice.Service
 	router        chi.Router
 }
 
-func NewHandler(cfg config.Config, authService *authservice.Service, tenantService *service.Service) *Handler {
+func NewHandler(cfg config.Config, authService *authservice.Service, tenantService *service.Service, userService *userservice.Service) *Handler {
 	h := &Handler{
 		cfg:           cfg,
 		authService:   authService,
 		tenantService: tenantService,
+		userService:   userService,
 		router:        chi.NewRouter(),
 	}
 
@@ -53,6 +56,7 @@ func (h *Handler) registerRoutes() {
 			r.With(platformmiddleware.RequireAuth(h.authService)).Get("/me", h.handleMe)
 		})
 		r.Get("/tenant/bootstrap", h.handleTenantBootstrap)
+		r.With(platformmiddleware.RequireAuth(h.authService)).Get("/users", h.handleListUsers)
 	})
 }
 
@@ -94,6 +98,17 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if input.TenantSlug == "" {
+		input.TenantSlug = platformmiddleware.ResolveTenantSlug(r)
+	}
+
+	if input.TenantSlug == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]any{
+			"error": "tenant slug could not be resolved from host or header",
+		})
+		return
+	}
+
 	result, err := h.authService.Login(r.Context(), input)
 	if err != nil {
 		status := http.StatusInternalServerError
@@ -128,6 +143,28 @@ func (h *Handler) handleMe(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, map[string]any{
 		"user": user,
+	})
+}
+
+func (h *Handler) handleListUsers(w http.ResponseWriter, r *http.Request) {
+	claims, ok := platformmiddleware.ClaimsFromContext(r.Context())
+	if !ok {
+		writeJSON(w, http.StatusUnauthorized, map[string]any{
+			"error": "missing auth context",
+		})
+		return
+	}
+
+	users, err := h.userService.ListByTenant(r.Context(), claims.TenantSlug)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]any{
+			"error": "failed to list users",
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"users": users,
 	})
 }
 

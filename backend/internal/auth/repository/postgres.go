@@ -57,6 +57,45 @@ LIMIT 1;
 	return scanUser(r.db.QueryRowContext(ctx, query, id))
 }
 
+func (r *PostgresRepository) ListByTenant(ctx context.Context, tenantSlug string) ([]domain.User, error) {
+	const query = `
+SELECT
+  u.id::text,
+  t.slug,
+  u.username,
+  COALESCE(u.email, ''),
+  u.role,
+  u.password_hash,
+  u.profile_data
+FROM users u
+JOIN tenants t ON t.id = u.tenant_id
+WHERE t.slug = $1
+  AND u.is_active = TRUE
+ORDER BY u.username ASC;
+`
+
+	rows, err := r.db.QueryContext(ctx, query, tenantSlug)
+	if err != nil {
+		return nil, fmt.Errorf("list users by tenant: %w", err)
+	}
+	defer rows.Close()
+
+	users := make([]domain.User, 0)
+	for rows.Next() {
+		user, err := scanUser(rows)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate users by tenant: %w", err)
+	}
+
+	return users, nil
+}
+
 type rowScanner interface {
 	Scan(dest ...any) error
 }

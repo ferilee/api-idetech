@@ -25,11 +25,15 @@ func ResolveTenantSlug(r *http.Request) string {
 	}
 
 	parts := strings.Split(host, ".")
-	if len(parts) < 3 {
-		return ""
+	if len(parts) >= 3 {
+		return sanitizeSlug(parts[0])
 	}
 
-	return sanitizeSlug(parts[0])
+	if len(parts) == 2 && parts[1] == "localhost" {
+		return sanitizeSlug(parts[0])
+	}
+
+	return ""
 }
 
 func sanitizeSlug(value string) string {

@@ -94,6 +94,20 @@ func (r *MemoryRepository) FindByID(_ context.Context, id string) (domain.User, 
 	return domain.User{}, fmt.Errorf("user not found")
 }
 
+func (r *MemoryRepository) ListByTenant(_ context.Context, tenantSlug string) ([]domain.User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	users := make([]domain.User, 0)
+	for _, user := range r.users {
+		if user.TenantSlug == tenantSlug {
+			users = append(users, user)
+		}
+	}
+
+	return users, nil
+}
+
 func keyFor(tenantSlug, identity string) string {
 	return strings.ToLower(strings.TrimSpace(tenantSlug)) + ":" + strings.ToLower(strings.TrimSpace(identity))
 }

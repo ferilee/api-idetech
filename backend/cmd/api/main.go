@@ -18,6 +18,7 @@ import (
 	tenantdomain "github.com/ferilee/api-idetech/backend/internal/tenant/domain"
 	tenantrepo "github.com/ferilee/api-idetech/backend/internal/tenant/repository"
 	tenantservice "github.com/ferilee/api-idetech/backend/internal/tenant/service"
+	userservice "github.com/ferilee/api-idetech/backend/internal/user/service"
 )
 
 type tenantRepository interface {
@@ -27,6 +28,7 @@ type tenantRepository interface {
 type authRepository interface {
 	FindByTenantAndIdentity(ctx context.Context, tenantSlug, identity string) (authdomain.User, error)
 	FindByID(ctx context.Context, id string) (authdomain.User, error)
+	ListByTenant(ctx context.Context, tenantSlug string) ([]authdomain.User, error)
 }
 
 func main() {
@@ -66,7 +68,8 @@ func main() {
 		cfg.JWTAudience,
 		cfg.JWTSecret,
 	)
-	handler := apphttp.NewHandler(cfg, authService, tenantService)
+	userService := userservice.NewService(authRepository)
+	handler := apphttp.NewHandler(cfg, authService, tenantService, userService)
 
 	server := &http.Server{
 		Addr:              ":" + cfg.Port,
