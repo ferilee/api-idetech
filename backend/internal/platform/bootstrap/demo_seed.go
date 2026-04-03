@@ -67,6 +67,11 @@ ON CONFLICT (tenant_id, username) DO UPDATE SET
   role = EXCLUDED.role,
   profile_data = EXCLUDED.profile_data,
   updated_at = NOW();
+
+	if err := ensureDemoUser(ctx, db, tenantID, "siswa.demo", "siswa.demo.local", "student", "demo123", "Siswa Demo"); err != nil {
+		return err
+	}
+
 `
 
 	if _, err := db.ExecContext(ctx, query, tenantID, username, email, string(hash), role, displayName); err != nil {
