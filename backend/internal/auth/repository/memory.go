@@ -60,6 +60,18 @@ func (r *MemoryRepository) SeedDefaults() error {
 		},
 	}
 
+	r.users[keyFor("demo", "siswa.demo")] = domain.User{
+		ID:           "user-demo-student",
+		TenantSlug:   "demo",
+		Username:     "siswa.demo",
+		Email:        "siswa.demo@idetech.local",
+		Role:         "student",
+		PasswordHash: string(teacherHash),
+		Profile: map[string]any{
+			"display_name": "Siswa Demo",
+		},
+	}
+
 	return nil
 }
 
