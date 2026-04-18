@@ -53,6 +53,7 @@ func (h *Handler) registerRoutes() {
 	h.router.Route("/api/v1", func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/login", h.handleLogin)
+			r.Post("/google", h.handleLoginGoogle)
 			r.With(platformmiddleware.RequireAuth(h.authService)).Get("/me", h.handleMe)
 		})
 		r.Get("/tenant/bootstrap", h.handleTenantBootstrap)
@@ -116,6 +117,37 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 			status = http.StatusUnauthorized
 		}
 		writeJSON(w, status, map[string]any{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
+	var input authservice.LoginGoogleInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{
+			"error": "invalid login payload",
+		})
+		return
+	}
+
+	if input.TenantSlug == "" {
+		input.TenantSlug = platformmiddleware.ResolveTenantSlug(r)
+	}
+
+	if input.TenantSlug == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]any{
+			"error": "tenant slug could not be resolved from host or header",
+		})
+		return
+	}
+
+	result, err := h.authService.LoginGoogle(r.Context(), input)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]any{
 			"error": err.Error(),
 		})
 		return

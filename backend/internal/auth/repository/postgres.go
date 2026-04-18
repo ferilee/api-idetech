@@ -96,6 +96,30 @@ ORDER BY u.username ASC;
 	return users, nil
 }
 
+func (r *PostgresRepository) Create(ctx context.Context, user domain.User) error {
+	const query = `
+INSERT INTO users (tenant_id, username, email, role, password_hash, profile_data)
+VALUES (
+  (SELECT id FROM tenants WHERE slug = $1),
+  $2, $3, $4, $5, $6
+)
+ON CONFLICT (tenant_id, LOWER(email)) DO UPDATE SET
+  username = EXCLUDED.username,
+  role = EXCLUDED.role,
+  profile_data = EXCLUDED.profile_data;
+`
+	profileData, _ := json.Marshal(user.Profile)
+	_, err := r.db.ExecContext(ctx, query,
+		user.TenantSlug,
+		user.Username,
+		user.Email,
+		user.Role,
+		user.PasswordHash,
+		profileData,
+	)
+	return err
+}
+
 type rowScanner interface {
 	Scan(dest ...any) error
 }

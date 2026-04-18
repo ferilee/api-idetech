@@ -20,6 +20,7 @@ type Config struct {
 	PostgresUser    string
 	PostgresPass    string
 	PostgresSSLMode string
+	GoogleClientID  string
 }
 
 func MustLoad() Config {
@@ -37,6 +38,7 @@ func MustLoad() Config {
 		PostgresUser:    getEnv("POSTGRES_USER", "idetech"),
 		PostgresPass:    getEnv("POSTGRES_PASSWORD", "idetech"),
 		PostgresSSLMode: getEnv("POSTGRES_SSLMODE", "disable"),
+		GoogleClientID:  getEnv("GOOGLE_CLIENT_ID", ""),
 	}
 
 	log.Printf("config loaded env=%s port=%s", cfg.AppEnv, cfg.Port)

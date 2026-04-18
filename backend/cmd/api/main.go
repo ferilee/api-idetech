@@ -67,6 +67,7 @@ func main() {
 		cfg.JWTIssuer,
 		cfg.JWTAudience,
 		cfg.JWTSecret,
+		cfg.GoogleClientID,
 	)
 	userService := userservice.NewService(authRepository)
 	handler := apphttp.NewHandler(cfg, authService, tenantService, userService)

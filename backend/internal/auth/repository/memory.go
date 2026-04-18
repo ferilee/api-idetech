@@ -33,6 +33,11 @@ func (r *MemoryRepository) SeedDefaults() error {
 		return err
 	}
 
+	adminIdetechHash, err := bcrypt.GenerateFromPassword([]byte("Id3-tech"), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -57,6 +62,18 @@ func (r *MemoryRepository) SeedDefaults() error {
 		PasswordHash: string(adminHash),
 		Profile: map[string]any{
 			"display_name": "Admin Demo",
+		},
+	}
+
+	r.users[keyFor("demo", "admin-idetech")] = domain.User{
+		ID:           "user-admin-idetech",
+		TenantSlug:   "demo",
+		Username:     "admin-idetech",
+		Email:        "admin@idetech.com",
+		Role:         "admin",
+		PasswordHash: string(adminIdetechHash),
+		Profile: map[string]any{
+			"display_name": "Admin IdeTech",
 		},
 	}
 
@@ -118,6 +135,14 @@ func (r *MemoryRepository) ListByTenant(_ context.Context, tenantSlug string) ([
 	}
 
 	return users, nil
+}
+
+func (r *MemoryRepository) Create(_ context.Context, user domain.User) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.users[keyFor(user.TenantSlug, user.Email)] = user
+	return nil
 }
 
 func keyFor(tenantSlug, identity string) string {
